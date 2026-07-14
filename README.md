@@ -70,6 +70,10 @@ echo -n '你的口令' | shasum -a 256
 （经营域 N=1 / 生态标杆 / 内容IP N=2）在同一条产线上运行，弹夹模板经"从零虚构业务出图"
 工厂验收。真实案例数据不在本仓（脱敏红线），本仓只含方法论、引擎与虚构示例。
 
+方法论正身与上位标准（私有仓，协作者可见）：`moonstachain/yuanli-strategy-soul`
+`docs/YUANLI-STRATEGY-CANON-INDEX.md`——本 kit 是其"公共方法论层"载体；跨域裁决与
+双友好验收标准（机器友好/人类友好两把尺）以该正典为准。
+
 ## License
 
 MIT
