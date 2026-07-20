@@ -1,0 +1,25 @@
+name: osa-v2-conformance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install canonical package
+        run: python -m pip install .
+      - name: Run schema, semantic, migration, and privacy tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate the no-fabricated-results public example
+        run: |
+          yuanli-osa-card validate examples/xiaoyuan-public-content-experiment.v2.json
+          test "$(yuanli-osa-card schema-hash | wc -c)" -eq 65

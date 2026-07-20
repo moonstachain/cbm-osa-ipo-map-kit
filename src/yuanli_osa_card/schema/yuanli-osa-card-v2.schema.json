@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/moonstachain/cbm-osa-ipo-map-kit/schema/yuanli-osa-card-v2.schema.json",
+  "title": "yuanli-osa-card/v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "card_id", "version", "status", "context", "objective",
+    "strategies", "actions", "calibration", "evidence", "governance"
+  ],
+  "properties": {
+    "contract": {"const": "yuanli-osa-card/v2"},
+    "card_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "version": {"type": "string", "pattern": "^v?[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"},
+    "status": {
+      "enum": ["draft", "review", "approved", "running", "closed", "legacy_read_only"]
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["situation", "cbm_domain", "cbm_layer", "parent_card_id", "hypothesis_migrations"],
+      "properties": {
+        "situation": {"type": ["string", "null"]},
+        "cbm_domain": {"type": ["string", "null"]},
+        "cbm_layer": {"enum": ["direct", "control", "execute", null]},
+        "parent_card_id": {"type": ["string", "null"]},
+        "hypothesis_migrations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["original_term", "classification", "status"],
+            "properties": {
+              "original_term": {"type": "string", "minLength": 1},
+              "classification": {
+                "enum": ["technical_feasibility_hypothesis", "archetype_hypothesis", "needs_ruling"]
+              },
+              "status": {"enum": ["migrated", "needs_ruling"]}
+            }
+          }
+        }
+      }
+    },
+    "objective": {"$ref": "#/$defs/objective"},
+    "strategies": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/strategy"}
+    },
+    "actions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/action"}
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["O", "S", "A"],
+      "properties": {
+        "O": {"enum": ["unassessed", "L1", "L2", "L3", "L4", "L5"]},
+        "S": {"enum": ["unassessed", "C", "B", "A", "S"]},
+        "A": {"enum": ["unassessed", "A0", "A1", "A2", "A3"]}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidenceItem"}
+        }
+      }
+    },
+    "governance": {"$ref": "#/$defs/governance"},
+    "legacy_v1": {"type": ["object", "null"]}
+  },
+  "$defs": {
+    "referenceList": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric_id", "name", "kind", "unit", "baseline", "target"],
+      "properties": {
+        "metric_id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["technical", "outcome", "growth", "vanity"]},
+        "unit": {"type": ["string", "null"]},
+        "baseline": {"type": ["number", "string", "boolean", "null"]},
+        "target": {"type": ["number", "string", "boolean", "null"]}
+      }
+    },
+    "candidateGoal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "statement", "expected_contribution", "constraints"],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "statement": {"type": "string", "minLength": 1},
+        "expected_contribution": {"type": ["number", "string", "null"]},
+        "constraints": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement", "candidate_goals", "selected_candidate_id", "goal_model",
+        "baseline", "metrics", "target_value", "deadline", "constraints",
+        "evidence_refs", "global_optimum_basis"
+      ],
+      "properties": {
+        "statement": {"type": ["string", "null"]},
+        "candidate_goals": {"type": "array", "items": {"$ref": "#/$defs/candidateGoal"}},
+        "selected_candidate_id": {"type": ["string", "null"]},
+        "goal_model": {"type": ["string", "null"]},
+        "baseline": {"type": ["number", "string", "null"]},
+        "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+        "target_value": {"type": ["number", "string", "null"]},
+        "deadline": {"type": ["string", "null"], "format": "date-time"},
+        "constraints": {"type": "array", "items": {"type": "string"}},
+        "evidence_refs": {"$ref": "#/$defs/referenceList"},
+        "global_optimum_basis": {"type": ["string", "null"]}
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "experiment_id", "stage", "hypothesis", "metrics", "threshold",
+        "sample", "timebox", "stop_conditions", "status", "result",
+        "decision", "receipt_refs", "reproducible", "attributable",
+        "comparable_cycle_id"
+      ],
+      "properties": {
+        "experiment_id": {"type": "string", "minLength": 1},
+        "stage": {"enum": ["technical_feasibility", "value_validation", "growth_validation"]},
+        "hypothesis": {"type": "string", "minLength": 1},
+        "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+        "threshold": {"type": ["number", "string", "boolean", "null"]},
+        "sample": {"type": ["integer", "string", "null"]},
+        "timebox": {"type": ["string", "null"]},
+        "stop_conditions": {"type": "array", "items": {"type": "string"}},
+        "status": {"enum": ["planned", "running", "passed", "failed", "inconclusive"]},
+        "result": {"type": ["string", "number", "object", "null"]},
+        "decision": {"enum": ["unassessed", "continue", "pivot", "stop", "promote"]},
+        "receipt_refs": {"$ref": "#/$defs/referenceList"},
+        "reproducible": {"type": ["boolean", "null"]},
+        "attributable": {"type": ["boolean", "null"]},
+        "comparable_cycle_id": {"type": ["string", "null"]}
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy_id", "statement", "causal_hypothesis", "expected_contribution",
+        "owner", "resource_units", "priority", "experiments"
+      ],
+      "properties": {
+        "strategy_id": {"type": "string", "minLength": 1},
+        "statement": {"type": "string", "minLength": 1},
+        "causal_hypothesis": {"type": "string", "minLength": 1},
+        "expected_contribution": {"type": ["number", "string", "null"]},
+        "owner": {"type": ["string", "null"]},
+        "resource_units": {"type": "number", "minimum": 0},
+        "priority": {"type": "integer", "minimum": 1},
+        "experiments": {"type": "array", "items": {"$ref": "#/$defs/experiment"}}
+      }
+    },
+    "humanGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "owner", "conditions"],
+      "properties": {
+        "required": {"type": "boolean"},
+        "owner": {"type": ["string", "null"]},
+        "conditions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_id", "statement", "owner", "start_at", "due_at",
+        "measurable_result", "sop_version", "agent_permissions", "human_gate",
+        "outputs", "run_receipt_refs", "feedback_receipt_refs",
+        "changed_rule_receipt_ref", "autonomous_planning", "rollback"
+      ],
+      "properties": {
+        "action_id": {"type": "string", "minLength": 1},
+        "statement": {"type": "string", "minLength": 1},
+        "owner": {"type": ["string", "null"]},
+        "start_at": {"type": ["string", "null"], "format": "date-time"},
+        "due_at": {"type": ["string", "null"], "format": "date-time"},
+        "measurable_result": {"type": ["string", "null"]},
+        "sop_version": {"type": ["string", "null"]},
+        "agent_permissions": {"type": "array", "items": {"type": "string"}},
+        "human_gate": {"$ref": "#/$defs/humanGate"},
+        "outputs": {"type": "array", "items": {"type": "string"}},
+        "run_receipt_refs": {"$ref": "#/$defs/referenceList"},
+        "feedback_receipt_refs": {"$ref": "#/$defs/referenceList"},
+        "changed_rule_receipt_ref": {"type": ["string", "null"]},
+        "autonomous_planning": {"type": "boolean"},
+        "rollback": {"type": ["string", "null"]}
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id", "kind", "source", "source_published_at", "observed_at",
+        "sha256", "authenticity", "current", "conflicted", "privacy"
+      ],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["source", "experiment_receipt", "action_receipt", "feedback_receipt", "changed_rule", "approval", "historical"]},
+        "source": {"type": "string", "minLength": 1},
+        "source_published_at": {"type": ["string", "null"], "format": "date-time"},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "authenticity": {"enum": ["verified_real", "provisional", "conflicted", "unavailable", "synthetic"]},
+        "current": {"type": "boolean"},
+        "conflicted": {"type": "boolean"},
+        "privacy": {"enum": ["public", "internal", "confidential", "restricted"]}
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification", "boundary", "wip_limit", "human_approval",
+        "privacy_reviewed", "engine_pin", "contract_sha256",
+        "migration_state", "weekly_cycle_id"
+      ],
+      "properties": {
+        "classification": {"enum": ["public", "internal", "confidential", "restricted"]},
+        "boundary": {"enum": ["production", "internal_dry_run", "test_only", "historical_read_only"]},
+        "wip_limit": {"type": "integer", "minimum": 1},
+        "human_approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["approved", "approval_ref", "approved_by", "approved_at"],
+          "properties": {
+            "approved": {"type": "boolean"},
+            "approval_ref": {"type": ["string", "null"]},
+            "approved_by": {"type": ["string", "null"]},
+            "approved_at": {"type": ["string", "null"], "format": "date-time"}
+          }
+        },
+        "privacy_reviewed": {"type": "boolean"},
+        "engine_pin": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "commit", "package", "version"],
+          "properties": {
+            "repository": {"const": "moonstachain/cbm-osa-ipo-map-kit"},
+            "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+            "package": {"const": "yuanli-osa-card"},
+            "version": {"const": "2.0.0"}
+          }
+        },
+        "contract_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "migration_state": {"enum": ["native_v2", "dual_read", "legacy_read_only", "needs_ruling"]},
+        "weekly_cycle_id": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

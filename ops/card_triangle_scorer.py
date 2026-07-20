@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""战略地图-原子卡片 · 统一打分器（cbm-osa-ipo-scored-v1）。
+"""战略地图-原子卡片 · v1 双读兼容打分器（cbm-osa-ipo-scored-v1）。
+
+新合同与唯一晋级引擎是 ``yuanli-osa-card/v2``（``src/yuanli_osa_card``）。
+本文件只为旧地图保留两个 weekly 周期的读取与渲染兼容，不得建立新消费者或给 v2 晋级。
 
 一个原子（IPO 三五三）× 三级递归（OSA=3×IPO → CBM=网格×OSA）的唯一判断引擎。
 所有图（内核/标杆/弹夹）经 ops/map_loader.py 装载后由本器打分；渲染器零评分只读输出。

@@ -1,0 +1,137 @@
+{
+  "contract": "yuanli-osa-card/v2",
+  "card_id": "example-xiaoyuan-public-content",
+  "version": "2.0",
+  "status": "draft",
+  "context": {
+    "situation": "脱敏教学样板：验证公域图文是否值得进入真实实验。",
+    "cbm_domain": "content-growth",
+    "cbm_layer": "control",
+    "parent_card_id": null,
+    "hypothesis_migrations": []
+  },
+  "objective": {
+    "statement": "从候选目标中选择一个可量化、可约束的公域内容实验目标。",
+    "candidate_goals": [
+      {
+        "candidate_id": "goal-quality",
+        "statement": "先验证内容质量稳定性",
+        "expected_contribution": null,
+        "constraints": ["不使用客户隐私数据"]
+      },
+      {
+        "candidate_id": "goal-conversion",
+        "statement": "先验证公域到私域的有效转化",
+        "expected_contribution": null,
+        "constraints": ["不以曝光或点赞单独判定价值"]
+      },
+      {
+        "candidate_id": "goal-efficiency",
+        "statement": "先验证内容生产效率",
+        "expected_contribution": null,
+        "constraints": ["Human Gate 保留发布批准"]
+      }
+    ],
+    "selected_candidate_id": null,
+    "goal_model": null,
+    "baseline": null,
+    "metrics": [],
+    "target_value": null,
+    "deadline": null,
+    "constraints": ["仅为脱敏样板，不记录或暗示真实经营结果"],
+    "evidence_refs": [],
+    "global_optimum_basis": null
+  },
+  "strategies": [
+    {
+      "strategy_id": "strategy-assisted-article",
+      "statement": "用 AI 辅助生成一条可人工审核的图文链路",
+      "causal_hypothesis": "若素材、生成、审核和发布准备可以稳定衔接，则具备进入技术可行性实验的条件。",
+      "expected_contribution": null,
+      "owner": null,
+      "resource_units": 1,
+      "priority": 1,
+      "experiments": [
+        {
+          "experiment_id": "exp-tech-draft",
+          "stage": "technical_feasibility",
+          "hypothesis": "素材到可审核图文的端到端链路可复现。",
+          "metrics": [
+            {
+              "metric_id": "metric-e2e",
+              "name": "端到端链路完成",
+              "kind": "technical",
+              "unit": "boolean",
+              "baseline": null,
+              "target": true
+            }
+          ],
+          "threshold": true,
+          "sample": null,
+          "timebox": "one bounded run",
+          "stop_conditions": ["发现隐私字段", "无法人工复核"],
+          "status": "planned",
+          "result": null,
+          "decision": "unassessed",
+          "receipt_refs": [],
+          "reproducible": null,
+          "attributable": null,
+          "comparable_cycle_id": null
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "action-prepare-experiment",
+      "statement": "准备技术可行性实验合同并等待人工批准",
+      "owner": null,
+      "start_at": null,
+      "due_at": null,
+      "measurable_result": null,
+      "sop_version": null,
+      "agent_permissions": ["draft_only"],
+      "human_gate": {
+        "required": true,
+        "owner": null,
+        "conditions": ["实验设计与隐私检查通过"]
+      },
+      "outputs": [],
+      "run_receipt_refs": [],
+      "feedback_receipt_refs": [],
+      "changed_rule_receipt_ref": null,
+      "autonomous_planning": false,
+      "rollback": null
+    }
+  ],
+  "calibration": {
+    "O": "unassessed",
+    "S": "unassessed",
+    "A": "unassessed"
+  },
+  "evidence": {
+    "items": []
+  },
+  "governance": {
+    "classification": "public",
+    "boundary": "internal_dry_run",
+    "wip_limit": 2,
+    "human_approval": {
+      "approved": false,
+      "approval_ref": null,
+      "approved_by": null,
+      "approved_at": null
+    },
+    "privacy_reviewed": true,
+    "engine_pin": {
+      "repository": "moonstachain/cbm-osa-ipo-map-kit",
+      "commit": null,
+      "package": "yuanli-osa-card",
+      "version": "2.0.0"
+    },
+    "contract_sha256": null,
+    "migration_state": "native_v2",
+    "weekly_cycle_id": null
+  },
+  "legacy_v1": null
+}

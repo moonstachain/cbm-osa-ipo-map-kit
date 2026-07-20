@@ -1,6 +1,10 @@
 site/
 build/out/
+build/lib/
+build/bdist.*/
 __pycache__/
+.venv/
+*.egg-info/
 .DS_Store
 data/maps/*/baseline.json
 data/maps/*/live_evidence.json
