@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yuanli-osa-card"
+version = "2.0.0"
+description = "Canonical yuanli-osa-card/v2 contract, migration adapter, and fail-closed OSA scoring engine"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Yuanli OS"}]
+dependencies = ["jsonschema>=4.22,<5"]
+
+[project.scripts]
+yuanli-osa-card = "yuanli_osa_card.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+yuanli_osa_card = ["schema/*.json"]
+"yuanli_osa_card.fixtures" = ["*.json"]

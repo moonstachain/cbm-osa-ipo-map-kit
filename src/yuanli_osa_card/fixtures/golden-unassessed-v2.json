@@ -1,0 +1,162 @@
+{
+  "contract": "yuanli-osa-card/v2",
+  "card_id": "golden-cross-repository-unassessed",
+  "version": "2.0",
+  "status": "draft",
+  "context": {
+    "situation": "Public conformance fixture with no claimed real outcome.",
+    "cbm_domain": "conformance",
+    "cbm_layer": "control",
+    "parent_card_id": null,
+    "hypothesis_migrations": []
+  },
+  "information_engine": {
+    "input": {
+      "source_refs": [],
+      "coverage_dimensions": [],
+      "complete": {"status": "unassessed", "evidence_refs": []},
+      "authentic_first_hand": {"status": "unassessed", "evidence_refs": []},
+      "granular": {"status": "unassessed", "evidence_refs": []}
+    },
+    "process": {
+      "level": "unassessed",
+      "artifacts": [],
+      "method_refs": []
+    },
+    "output": {
+      "decision_pointers": ["/objective", "/strategies", "/actions"],
+      "closed_loop": {"status": "unassessed", "evidence_refs": []},
+      "automated": {"status": "unassessed", "evidence_refs": []},
+      "intelligent": {"status": "unassessed", "evidence_refs": []}
+    },
+    "feedback": {
+      "result_refs": [],
+      "next_input_refs": [],
+      "incorporated_at": null
+    }
+  },
+  "objective": {
+    "statement": "Compare candidate goals before a bounded technical experiment.",
+    "candidate_goals": [
+      {
+        "candidate_id": "goal-quality",
+        "statement": "Validate quality",
+        "expected_contribution": null,
+        "constraints": ["public fixture only"]
+      },
+      {
+        "candidate_id": "goal-value",
+        "statement": "Validate user value",
+        "expected_contribution": null,
+        "constraints": ["no fabricated outcome"]
+      },
+      {
+        "candidate_id": "goal-growth",
+        "statement": "Validate reproducible growth",
+        "expected_contribution": null,
+        "constraints": ["three comparable cycles required"]
+      }
+    ],
+    "selected_candidate_id": null,
+    "goal_model": null,
+    "baseline": null,
+    "metrics": [],
+    "target_value": null,
+    "deadline": null,
+    "constraints": ["no real project result is represented"],
+    "evidence_refs": [],
+    "global_optimum_basis": null
+  },
+  "strategies": [
+    {
+      "strategy_id": "strategy-conformance",
+      "statement": "Prepare a reproducible technical experiment",
+      "causal_hypothesis": "A bounded end-to-end run can test technical feasibility.",
+      "expected_contribution": null,
+      "owner": null,
+      "resource_units": 1,
+      "priority": 1,
+      "experiments": [
+        {
+          "experiment_id": "experiment-planned",
+          "stage": "technical_feasibility",
+          "hypothesis": "The end-to-end path is reproducible.",
+          "metrics": [
+            {
+              "metric_id": "metric-e2e",
+              "name": "End-to-end path completes",
+              "kind": "technical",
+              "unit": "boolean",
+              "baseline": null,
+              "target": true
+            }
+          ],
+          "threshold": true,
+          "sample": null,
+          "timebox": "one bounded run",
+          "stop_conditions": ["privacy boundary fails"],
+          "status": "planned",
+          "result": null,
+          "decision": "unassessed",
+          "receipt_refs": [],
+          "reproducible": null,
+          "attributable": null,
+          "comparable_cycle_id": null
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "action-prepare",
+      "statement": "Prepare the experiment contract",
+      "owner": null,
+      "start_at": null,
+      "due_at": null,
+      "measurable_result": null,
+      "sop_version": null,
+      "agent_permissions": ["draft_only"],
+      "human_gate": {
+        "required": true,
+        "owner": null,
+        "conditions": ["contract and privacy review pass"]
+      },
+      "outputs": [],
+      "run_receipt_refs": [],
+      "feedback_receipt_refs": [],
+      "changed_rule_receipt_ref": null,
+      "autonomous_planning": false,
+      "rollback": null
+    }
+  ],
+  "calibration": {
+    "O": "unassessed",
+    "S": "unassessed",
+    "A": "unassessed"
+  },
+  "evidence": {
+    "items": []
+  },
+  "governance": {
+    "classification": "public",
+    "boundary": "test_only",
+    "wip_limit": 1,
+    "human_approval": {
+      "approved": false,
+      "approval_ref": null,
+      "approved_by": null,
+      "approved_at": null
+    },
+    "privacy_reviewed": true,
+    "engine_pin": {
+      "repository": "moonstachain/cbm-osa-ipo-map-kit",
+      "commit": null,
+      "package": "yuanli-osa-card",
+      "version": "2.0.0"
+    },
+    "contract_sha256": null,
+    "migration_state": "native_v2",
+    "weekly_cycle_id": null
+  },
+  "legacy_v1": null
+}
