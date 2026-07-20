@@ -5,6 +5,7 @@ from pathlib import Path
 
 from yuanli_osa_card import CardValidationError, evaluate_card, migrate_v1
 from yuanli_osa_card.engine import contract_sha256, validate_card
+from yuanli_osa_card.fixtures import load_golden_fixture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +63,32 @@ def add_receipt(card, exp):
 
 
 class OSAContractTest(unittest.TestCase):
+    def test_packaged_golden_fixture_has_exact_cross_repository_projection(self):
+        result = validate_card(load_golden_fixture())
+        self.assertEqual(
+            {
+                "ceilings": {
+                    axis: result["calibration"][axis]["supported_ceiling"]
+                    for axis in "OSA"
+                },
+                "effective": {
+                    axis: result["calibration"][axis]["effective"]
+                    for axis in "OSA"
+                },
+                "gaps": result["gaps"],
+                "gold": result["gold"],
+            },
+            {
+                "ceilings": {"O": "L1", "S": "C", "A": "A0"},
+                "effective": {"O": "unassessed", "S": "unassessed", "A": "unassessed"},
+                "gaps": [
+                    "O: objective evidence is missing, stale, conflicted, or not verified_real",
+                    "S/strategy-conformance: no reproducible technical feasibility receipt",
+                ],
+                "gold": False,
+            },
+        )
+
     def test_public_sample_is_valid_but_has_no_effective_grade(self):
         result = validate_card(sample())
         self.assertTrue(result["valid"])

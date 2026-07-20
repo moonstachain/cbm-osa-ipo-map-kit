@@ -23,3 +23,4 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 yuanli_osa_card = ["schema/*.json"]
+"yuanli_osa_card.fixtures" = ["*.json"]
