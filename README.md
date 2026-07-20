@@ -39,29 +39,19 @@ yuanli-osa-card schema-hash
 - A0–A3 独立于实验阶段；A3 必须有真实 `changed_rule` 回执与 Human Gate。
 - 引擎只计算 `supported_ceiling`。只有 production 边界、当前人工批准回执与足够证据同时存在，`effective` 才可能生效。
 
-`ops/card_triangle_scorer.py` 暂作为 `cbm-osa-ipo-scored-v1` 双读兼容入口，供旧地图在两个
-weekly 周期内读取历史；它不是 v2 合同或新晋级的真源，不得再产生新消费者。确认旧消费者迁完后退为只读历史投影。
+`cbm-osa-ipo-scored-v1` 已完成两个可计数 weekly 周期后退出主动评分。历史实现和旧叶片仍由
+Git 历史及 `legacy_v1` 数据保留，但 `ops/card_triangle_scorer.py` 现在是 fail-closed 退休标记，
+不会再生成分数。任何新建、更新或晋级只能调用上面的 `yuanli-osa-card/v2` 引擎。
 
-## Legacy v1 地图渲染
+## Legacy v1 历史投影
 
-```bash
-# 0. 先跑自带的虚构示例（手作烘焙工作室，9 格）
-python3 ops/card_triangle_scorer.py --map demo-bakery --check   # 评分 + 评分门
-python3 build/build_maps.py --map demo-bakery                    # 出图 site/map-demo-bakery.html
+历史五段式页面和旧叶片只读保留，不再提供重评分或新建弹夹入口。运行旧 CLI 会返回结构化
+`status=retired` 并以非零状态退出。需要核验历史时应读取已经签名的快照或指定 Git 提交，
+不得重新计算并覆盖旧证据；新卡必须通过 `yuanli-osa-card validate/score` 使用统一信息底座。
 
-# 1. 开你自己的弹夹
-python3 build/build_maps.py --new my-business
-# 2. 答五问、填 data/maps/my-business/map.py（模板里有 21 叶示例格 + 空白立格 + 纪律注释）
-python3 data/maps/my-business/map.py                             # 自检
-# 3. 评分门 → 出图
-python3 ops/card_triangle_scorer.py --map my-business --check
-python3 build/build_maps.py --map my-business
-```
+## Legacy v1 历史纪律（只读说明，不再执行评分）
 
-该入口只重放历史五段式地图和旧叶片，不驱动 v2 评分。新卡必须通过
-`yuanli-osa-card validate/score` 使用统一信息底座。
-
-## 这套东西的脾气（诚实纪律，评分门强制执行）
+以下规则解释既有 v1 快照为何形成当前结果，只用于审计历史，不是可继续调用的评分门：
 
 - **公式默认 ⚪ / authored 覆盖**：你没写判断的叶子由 flat 三轴公式降解（全标 ⚪ 非实证）；
   你写的 authored 叶必须带非空证据句 + 置信 🟢/🟡——公式冒充真据 = 假绿，`--check` 直接拒。
@@ -75,17 +65,17 @@ python3 build/build_maps.py --map my-business
 ```
 methodology/   统一信息底座正典 + 7 步配方；递归 v3 仅保存历史血缘
 src/yuanli_osa_card/  v2 正式合同、唯一评分引擎、迁移器与 CLI
-ops/           v1 地图兼容装载与 CLI（双读期只读历史）
-build/         common.py（页面骨架/门体）· build_maps.py（--new 开弹夹 / --map 出图）
-data/maps/     _template/（弹夹模板）· demo-bakery/（虚构示例，可直接跑）
+ops/           v1 退休标记与历史装载源码（不得用于主动评分）
+build/         legacy v1 页面源码，只用于理解历史投影
+data/maps/     legacy v1 虚构示例与模板，只读保留
 examples/      脱敏 v2 样板卡（无虚构结果、无绿灯）
 deploy.example.sh   通用部署示例（换成你自己的静态托管）
 ```
 
-## 访问门
+## 历史访问门
 
-页面自带 sha256 客户端访问门。**默认 HASH 是占位符 `CHANGE_ME_SHA256_OF_YOUR_PASSPHRASE`**——
-上线前生成你自己的口令哈希替换 `build/templates/gate.frag`：
+历史页面源码带 sha256 客户端访问门。**默认 HASH 是占位符 `CHANGE_ME_SHA256_OF_YOUR_PASSPHRASE`**；
+本仓不再提供旧页面的主动构建或发布流程。若审计历史实现，可在隔离环境生成测试哈希：
 
 ```bash
 echo -n '你的口令' | shasum -a 256
