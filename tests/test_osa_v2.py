@@ -62,7 +62,64 @@ def add_receipt(card, exp):
     card["evidence"]["items"].append(evidence(exp["receipt_refs"][0], "experiment_receipt"))
 
 
+def verify_information_engine(card):
+    card["information_engine"] = {
+        "input": {
+            "source_refs": ["ev-source"],
+            "coverage_dimensions": ["goal-space", "strategy-space", "execution-constraints"],
+            "complete": {"status": "pass", "evidence_refs": ["ev-source"]},
+            "authentic_first_hand": {"status": "pass", "evidence_refs": ["ev-source"]},
+            "granular": {"status": "pass", "evidence_refs": ["ev-source"]},
+        },
+        "process": {
+            "level": "L5",
+            "artifacts": [
+                {
+                    "level": level,
+                    "statement": f"evidenced {level} information artifact",
+                    "evidence_refs": ["ev-source"],
+                }
+                for level in ("L1", "L2", "L3", "L4", "L5")
+            ],
+            "method_refs": ["ev-source"],
+        },
+        "output": {
+            "decision_pointers": ["/objective", "/strategies", "/actions"],
+            "closed_loop": {"status": "pass", "evidence_refs": ["ev-feedback"]},
+            "automated": {"status": "pass", "evidence_refs": ["ev-run"]},
+            "intelligent": {"status": "pass", "evidence_refs": ["ev-rule"]},
+        },
+        "feedback": {
+            "result_refs": ["ev-feedback"],
+            "next_input_refs": ["ev-source"],
+            "incorporated_at": "2026-07-20T00:01:30Z",
+        },
+    }
+
+
 class OSAContractTest(unittest.TestCase):
+    def test_active_contract_surfaces_do_not_repeat_legacy_recursive_semantics(self):
+        active_paths = [
+            ROOT / "README.md",
+            ROOT / "methodology" / "7-steps.md",
+            ROOT / "methodology" / "unified-information-engine-v4.md",
+            ROOT / "build" / "build_maps.py",
+            ROOT / "src" / "yuanli_osa_card" / "engine.py",
+            ROOT / "src" / "yuanli_osa_card" / "migration.py",
+        ]
+        forbidden = (
+            "3" + "×IPO",
+            "O" + "的IPO",
+            "S" + "的IPO",
+            "A" + "的IPO",
+            "分别运行" + " IPO",
+            "各自运行一次" + " IPO",
+        )
+        for path in active_paths:
+            text = path.read_text(encoding="utf-8")
+            for phrase in forbidden:
+                self.assertNotIn(phrase, text, f"legacy phrase remains active in {path}")
+
     def test_packaged_golden_fixture_has_exact_cross_repository_projection(self):
         result = validate_card(load_golden_fixture())
         self.assertEqual(
@@ -79,10 +136,15 @@ class OSAContractTest(unittest.TestCase):
                 "gold": result["gold"],
             },
             {
-                "ceilings": {"O": "L1", "S": "C", "A": "A0"},
+                "ceilings": {"O": "unassessed", "S": "C", "A": "A0"},
                 "effective": {"O": "unassessed", "S": "unassessed", "A": "unassessed"},
                 "gaps": [
+                    "IPO/I: full, authentic first-hand, granular source coverage is not verified",
+                    "IPO/P: the shared information process has not reached evidenced L5 without skipping",
+                    "IPO/O: closed-loop, automated, and intelligent output evidence is incomplete",
+                    "IPO/feedback: reality results have not been incorporated as next-round input",
                     "O: objective evidence is missing, stale, conflicted, or not verified_real",
+                    "O: objective maturity is capped by the shared IPO Process at unassessed",
                     "S/strategy-conformance: no reproducible technical feasibility receipt",
                 ],
                 "gold": False,
@@ -107,6 +169,54 @@ class OSAContractTest(unittest.TestCase):
         card["strategies"][0]["experiments"][0]["stage"] = "prototype_validation"
         with self.assertRaises(CardValidationError):
             evaluate_card(card)
+
+    def test_v2_requires_one_shared_information_engine_and_rejects_nested_ipo(self):
+        card = sample()
+        del card["information_engine"]
+        with self.assertRaises(CardValidationError):
+            evaluate_card(card)
+
+        card = sample()
+        card["objective"]["ipo"] = {"legacy": True}
+        with self.assertRaises(CardValidationError):
+            evaluate_card(card)
+
+    def test_process_is_contiguous_and_caps_objective_maturity(self):
+        card = sample()
+        self.assertEqual(
+            evaluate_card(card)["calibration"]["O"]["supported_ceiling"],
+            "unassessed",
+        )
+        card["information_engine"]["process"].update({
+            "level": "L3",
+            "artifacts": [
+                {"level": "L1", "statement": "raw facts", "evidence_refs": ["ev-source"]},
+                {"level": "L3", "statement": "viewpoint", "evidence_refs": ["ev-source"]},
+            ],
+        })
+        card["evidence"]["items"].append(evidence("ev-source", "source"))
+        result = evaluate_card(card)
+        self.assertIn("ipo_process_level_skipped", {row["code"] for row in result["errors"]})
+
+    def test_unverified_input_keeps_effective_osa_unassessed(self):
+        card = sample()
+        verify_information_engine(card)
+        card["evidence"]["items"] = [
+            evidence("ev-source", "source"),
+            evidence("ev-run", "action_receipt"),
+            evidence("ev-feedback", "feedback_receipt"),
+            evidence("ev-rule", "changed_rule"),
+        ]
+        result = evaluate_card(card)
+        self.assertTrue(result["information_engine"]["verified"])
+        card["information_engine"]["input"]["complete"] = {
+            "status": "fail", "evidence_refs": ["ev-source"]
+        }
+        result = evaluate_card(card)
+        self.assertFalse(result["information_engine"]["input"]["verified"])
+        self.assertTrue(all(
+            result["calibration"][axis]["effective"] == "unassessed" for axis in "OSA"
+        ))
 
     def test_technical_prototype_can_reach_b_but_not_a_or_s(self):
         card = sample()
@@ -183,6 +293,7 @@ class OSAContractTest(unittest.TestCase):
         self.assertEqual(migrated["calibration"], {"O": "unassessed", "S": "unassessed", "A": "unassessed"})
         self.assertEqual(migrated["context"]["hypothesis_migrations"][0]["classification"], "technical_feasibility_hypothesis")
         self.assertEqual(migrated["legacy_v1"]["Situation"], "market context only")
+        self.assertEqual(migrated["information_engine"]["process"]["level"], "unassessed")
 
         ambiguous = migrate_v1({"prototype_hypothesis": "原型假设尚未说明语义"})
         self.assertEqual(ambiguous["governance"]["migration_state"], "needs_ruling")
@@ -190,6 +301,27 @@ class OSAContractTest(unittest.TestCase):
 
         archetype = migrate_v1({"prototype_hypothesis": "原型假设回答我是谁和原型人格"})
         self.assertEqual(archetype["context"]["hypothesis_migrations"][0]["classification"], "archetype_hypothesis")
+
+    def test_legacy_recursive_ipo_is_preserved_but_never_scored(self):
+        legacy = {
+            "osa": {
+                "O": {"ipo": {"i": 5, "p": 5, "o": 5, "evidence_refs": ["old-o"]}},
+                "S": {"ipo": {"i": 4, "p": 4, "o": 4}},
+                "A": {"ipo": {"i": 3, "p": 3, "o": 3}},
+            }
+        }
+        migrated = migrate_v1(legacy)
+        self.assertEqual(
+            migrated["legacy_v1"]["legacy_recursive_ipo"]["O"]["p"], 5
+        )
+        self.assertEqual(
+            migrated["legacy_v1"]["migration_report"]["candidate_evidence_refs"],
+            [{"path": "$.osa.O.ipo.evidence_refs[0]", "value": "old-o"}],
+        )
+        self.assertEqual(migrated["calibration"], {
+            "O": "unassessed", "S": "unassessed", "A": "unassessed"
+        })
+        self.assertFalse(evaluate_card(migrated)["information_engine"]["verified"])
 
     def test_public_card_rejects_private_evidence(self):
         card = sample()
@@ -241,8 +373,10 @@ class OSAContractTest(unittest.TestCase):
             "rollback": "restore fixture",
         })
         action["human_gate"] = {"required": True, "owner": "human", "conditions": ["review"]}
+        verify_information_engine(card)
+        card["objective"]["evidence_refs"] = ["ev-source"]
         card["evidence"]["items"] = [
-            evidence("ev-objective", "source"),
+            evidence("ev-source", "source"),
             evidence("ev-run", "action_receipt"),
             evidence("ev-feedback", "feedback_receipt"),
             evidence("ev-rule", "changed_rule"),
@@ -258,7 +392,13 @@ class OSAContractTest(unittest.TestCase):
             "approved_at": "2026-07-20T00:02:00Z",
         }
         result = validate_card(card)
+        self.assertTrue(result["information_engine"]["verified"])
         self.assertTrue(result["gold"])
+
+        card["information_engine"]["feedback"]["incorporated_at"] = None
+        result = evaluate_card(card)
+        self.assertFalse(result["information_engine"]["verified"])
+        self.assertFalse(result["gold"])
 
 
 if __name__ == "__main__":

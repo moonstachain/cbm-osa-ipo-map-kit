@@ -10,6 +10,31 @@
     "parent_card_id": null,
     "hypothesis_migrations": []
   },
+  "information_engine": {
+    "input": {
+      "source_refs": [],
+      "coverage_dimensions": [],
+      "complete": {"status": "unassessed", "evidence_refs": []},
+      "authentic_first_hand": {"status": "unassessed", "evidence_refs": []},
+      "granular": {"status": "unassessed", "evidence_refs": []}
+    },
+    "process": {
+      "level": "unassessed",
+      "artifacts": [],
+      "method_refs": []
+    },
+    "output": {
+      "decision_pointers": ["/objective", "/strategies", "/actions"],
+      "closed_loop": {"status": "unassessed", "evidence_refs": []},
+      "automated": {"status": "unassessed", "evidence_refs": []},
+      "intelligent": {"status": "unassessed", "evidence_refs": []}
+    },
+    "feedback": {
+      "result_refs": [],
+      "next_input_refs": [],
+      "incorporated_at": null
+    }
+  },
   "objective": {
     "statement": "Compare candidate goals before a bounded technical experiment.",
     "candidate_goals": [

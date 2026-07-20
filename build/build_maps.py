@@ -81,7 +81,7 @@ DRAWER_HTML = '''
 <div class="k">能力说明 / REUSE</div><div class="v" id="d-reuse"></div>
 <div class="k">复用指引 / HOW TO INVOKE</div><div class="v hint" id="d-hint"></div>
 <div id="d-edgewrap" style="display:none"><div class="k">关系边 / EDGES</div><div class="v mono" id="d-edges" style="font-size:11px"></div></div>
-<div class="k">原子卡 / OSA = 3×IPO · 三五三（🟢真据/🟡推断/⚪公式默认）</div>
+<div class="k">历史递归叶片 / LEGACY READ-ONLY（不驱动 v2 评分）</div>
 <div class="osatabs" id="d-osatabs"></div><div id="d-osa"></div>
 <div class="ipolegacy" id="d-ipolegacy"></div>
 <div class="k">四道门自检 / GATES（究竟·完备·递进·原子 · 公式×规则取严）</div><div id="d-gates"></div>
@@ -93,7 +93,7 @@ DRAWER_HTML = '''
 
 DRAWER_JS = r'''
 var KC={skill:'SKILL',pack:'PACK',repo:'REPO',site:'SITE',doc:'DOC'};
-var OSEG={O:'O 目标的IPO',S:'S 策略的IPO',A:'A 行动的IPO'};
+var OSEG={O:'O 目标历史叶片',S:'S 策略历史叶片',A:'A 行动历史叶片'};
 var OROWS=[['i','quan','I 采·全(不漏)'],['i','zhen','I 采·真一手'],['i','xi','I 采·细'],
            ['p','level','P 工·五层'],['o','closure','O 表·闭环'],['o','auto','O 表·自动化'],['o','intel','O 表·智能化']];
 var OB={formula:'公式',authored:'人裁',live:'live'};
@@ -135,7 +135,7 @@ function od(id,push){var c=C[id];if(!c)return;
  tabs.querySelectorAll('.osatab').forEach(function(t){t.addEventListener('click',function(){showSeg(c,t.dataset.seg)})});
  showSeg(c,'O');
  var li=c.legacy_ipo;
- document.getElementById('d-ipolegacy').textContent='旧单IPO三段(兼容视图·公式) i='+li.i+' p='+li.p+' o='+li.o+' · 现已升 OSA=3×IPO 共21叶';
+ document.getElementById('d-ipolegacy').textContent='旧版信息三段兼容视图(只读公式) i='+li.i+' p='+li.p+' o='+li.o+' · 不进入 yuanli-osa-card/v2';
  document.getElementById('d-gates').innerHTML=['究竟','完备','递进','原子'].map(function(k){var g=c.gates[k];
    return '<div class="gaterow"><span class="gate '+g.verdict+'">'+k+' · '+g.verdict+(g.authored?' ·人裁':'')+'</span><span class="greason">'+esc(g.reason)+'</span></div>'}).join('');
  var ah=(c.assets||[]).map(function(a){
@@ -282,14 +282,14 @@ def render_single(scored):
             + f'<h1>{C.esc(m["title"])}</h1><span class="sub">{C.esc(m.get("role", ""))}</span>'
             + f'<span class="mono" style="color:var(--gold);border:1px solid var(--gold-3);padding:2px 9px;'
             + f'border-radius:2px;font-size:11px">环{m.get("ring", "?")} · {C.esc(m.get("grid", ""))}</span></div>'
-            + f'<div class="meta">{scored["map_id"]} · cellcard-v1 · 每格一张 OSA 卡 = 3×IPO 三五三 · as_of {C.esc(m.get("as_of", ""))}</div>'
+            + f'<div class="meta">{scored["map_id"]} · cellcard-v1 · legacy_recursive_interpretation · as_of {C.esc(m.get("as_of", ""))}</div>'
             + f'<div class="blurb">{C.esc(m.get("blurb", ""))}</div>'
             + C.honesty_banner(scored)
             + deeplink
             + '<div class="tag">SIBLING MAPS · 同构标杆</div><div class="mapsw">' + ''.join(sib) + '</div>'
             + '<div class="tag">GOLDEN TRIANGLE · 黄金三角</div>'
             + f'<div class="scoreband">{tri}</div><div class="metrics">{metrics}</div>'
-            + f'<div class="tag">BOARD · 棋盘</div><div class="hs">{C.esc(m["title"])}（点击格子钻取 OSA=3×IPO 三五三）</div>'
+            + f'<div class="tag">BOARD · 棋盘</div><div class="hs">{C.esc(m["title"])}（点击格子查看历史只读叶片）</div>'
             + ''.join(grid)
             + '<div class="g100sec"><div class="hs">距100分 / GAP TO 100 · 缺口即验收清单</div>'
             + ''.join(g100) + '</div>'

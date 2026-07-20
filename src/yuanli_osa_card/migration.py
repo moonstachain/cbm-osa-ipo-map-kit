@@ -76,6 +76,64 @@ def _legacy_actions(legacy: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def _empty_information_engine() -> dict[str, Any]:
+    unassessed_gate = {"status": "unassessed", "evidence_refs": []}
+    return {
+        "input": {
+            "source_refs": [],
+            "coverage_dimensions": [],
+            "complete": copy.deepcopy(unassessed_gate),
+            "authentic_first_hand": copy.deepcopy(unassessed_gate),
+            "granular": copy.deepcopy(unassessed_gate),
+        },
+        "process": {"level": "unassessed", "artifacts": [], "method_refs": []},
+        "output": {
+            "decision_pointers": ["/objective", "/strategies", "/actions"],
+            "closed_loop": copy.deepcopy(unassessed_gate),
+            "automated": copy.deepcopy(unassessed_gate),
+            "intelligent": copy.deepcopy(unassessed_gate),
+        },
+        "feedback": {"result_refs": [], "next_input_refs": [], "incorporated_at": None},
+    }
+
+
+def _legacy_recursive_ipo(legacy: dict[str, Any]) -> dict[str, Any] | None:
+    """Extract old O/S/A IPO payloads without interpreting or scoring them."""
+    containers = []
+    for key in ("osa", "OSA"):
+        if isinstance(legacy.get(key), dict):
+            containers.append(legacy[key])
+    containers.append(legacy)
+    extracted: dict[str, Any] = {}
+    for axis in ("O", "S", "A"):
+        for container in containers:
+            row = container.get(axis, container.get(axis.lower()))
+            if isinstance(row, dict) and "ipo" in row:
+                extracted[axis] = copy.deepcopy(row["ipo"])
+                break
+    return extracted or None
+
+
+def _candidate_evidence_refs(value: Any, path: str = "$") -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}"
+            lowered = key.lower()
+            if lowered.endswith("_ref") and isinstance(child, str) and child:
+                rows.append({"path": child_path, "value": child})
+            elif lowered.endswith("_refs") and isinstance(child, list):
+                rows.extend(
+                    {"path": f"{child_path}[{index}]", "value": ref}
+                    for index, ref in enumerate(child) if isinstance(ref, str) and ref
+                )
+            rows.extend(_candidate_evidence_refs(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            rows.extend(_candidate_evidence_refs(child, f"{path}[{index}]"))
+    return rows
+
+
 def migrate_v1(
     legacy: dict[str, Any], *, card_id: str | None = None,
     classification: str = "internal",
@@ -105,6 +163,13 @@ def migrate_v1(
     situation = legacy.get("Situation", legacy.get("situation"))
     objective = legacy.get("Objective", legacy.get("objective"))
     needs_ruling = any(row["status"] == "needs_ruling" for row in migrations)
+    legacy_copy = copy.deepcopy(legacy)
+    legacy_copy["legacy_recursive_ipo"] = _legacy_recursive_ipo(legacy)
+    legacy_copy["migration_report"] = {
+        "candidate_evidence_refs": _candidate_evidence_refs(legacy),
+        "binding_status": "human_review_required",
+        "scoring_status": "ignored_by_v2",
+    }
     return {
         "contract": CONTRACT_ID,
         "card_id": card_id or legacy.get("apm_card_id") or f"legacy-{payload_hash[:16]}",
@@ -117,6 +182,7 @@ def migrate_v1(
             "parent_card_id": None,
             "hypothesis_migrations": migrations,
         },
+        "information_engine": _empty_information_engine(),
         "objective": {
             "statement": _text(objective),
             "candidate_goals": [],
@@ -155,5 +221,5 @@ def migrate_v1(
             "migration_state": "needs_ruling" if needs_ruling else "dual_read",
             "weekly_cycle_id": None,
         },
-        "legacy_v1": copy.deepcopy(legacy),
+        "legacy_v1": legacy_copy,
     }

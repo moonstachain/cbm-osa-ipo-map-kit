@@ -5,7 +5,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "contract", "card_id", "version", "status", "context", "objective",
+    "contract", "card_id", "version", "status", "context", "information_engine", "objective",
     "strategies", "actions", "calibration", "evidence", "governance"
   ],
   "properties": {
@@ -41,6 +41,7 @@
         }
       }
     },
+    "information_engine": {"$ref": "#/$defs/informationEngine"},
     "objective": {"$ref": "#/$defs/objective"},
     "strategies": {
       "type": "array",
@@ -79,6 +80,91 @@
       "type": "array",
       "items": {"type": "string", "minLength": 1},
       "uniqueItems": true
+    },
+    "evidenceGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_refs"],
+      "properties": {
+        "status": {"enum": ["unassessed", "pass", "fail"]},
+        "evidence_refs": {"$ref": "#/$defs/referenceList"}
+      }
+    },
+    "processArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "statement", "evidence_refs"],
+      "properties": {
+        "level": {"enum": ["L1", "L2", "L3", "L4", "L5"]},
+        "statement": {"type": "string", "minLength": 1},
+        "evidence_refs": {"$ref": "#/$defs/referenceList"}
+      }
+    },
+    "informationEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "process", "output", "feedback"],
+      "properties": {
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_refs", "coverage_dimensions", "complete",
+            "authentic_first_hand", "granular"
+          ],
+          "properties": {
+            "source_refs": {"$ref": "#/$defs/referenceList"},
+            "coverage_dimensions": {
+              "type": "array",
+              "items": {"type": "string", "minLength": 1},
+              "uniqueItems": true
+            },
+            "complete": {"$ref": "#/$defs/evidenceGate"},
+            "authentic_first_hand": {"$ref": "#/$defs/evidenceGate"},
+            "granular": {"$ref": "#/$defs/evidenceGate"}
+          }
+        },
+        "process": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "artifacts", "method_refs"],
+          "properties": {
+            "level": {"enum": ["unassessed", "L1", "L2", "L3", "L4", "L5"]},
+            "artifacts": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/processArtifact"}
+            },
+            "method_refs": {"$ref": "#/$defs/referenceList"}
+          }
+        },
+        "output": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision_pointers", "closed_loop", "automated", "intelligent"],
+          "properties": {
+            "decision_pointers": {
+              "type": "array",
+              "items": {"enum": ["/objective", "/strategies", "/actions"]},
+              "minItems": 3,
+              "maxItems": 3,
+              "uniqueItems": true
+            },
+            "closed_loop": {"$ref": "#/$defs/evidenceGate"},
+            "automated": {"$ref": "#/$defs/evidenceGate"},
+            "intelligent": {"$ref": "#/$defs/evidenceGate"}
+          }
+        },
+        "feedback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["result_refs", "next_input_refs", "incorporated_at"],
+          "properties": {
+            "result_refs": {"$ref": "#/$defs/referenceList"},
+            "next_input_refs": {"$ref": "#/$defs/referenceList"},
+            "incorporated_at": {"type": ["string", "null"], "format": "date-time"}
+          }
+        }
+      }
     },
     "metric": {
       "type": "object",

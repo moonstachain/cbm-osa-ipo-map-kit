@@ -28,6 +28,8 @@ from .constants import (
 
 
 SCHEMA_PATH = Path(__file__).parent / "schema" / "yuanli-osa-card-v2.schema.json"
+IPO_PROCESS_LEVELS = ("unassessed", "L1", "L2", "L3", "L4", "L5")
+IPO_PROCESS_RANKS = {level: rank for rank, level in enumerate(IPO_PROCESS_LEVELS)}
 
 
 class CardValidationError(ValueError):
@@ -119,7 +121,104 @@ def _privacy_errors(card: dict[str, Any]) -> list[dict[str, str]]:
     return errors
 
 
-def _objective_ceiling(card: dict[str, Any], evidence: EvidenceIndex, gaps: list[str]) -> str:
+def _gate_supported(
+    gate: dict[str, Any], evidence: EvidenceIndex, *, kind: str | None = None
+) -> bool:
+    return gate.get("status") == "pass" and evidence.trusted(
+        gate.get("evidence_refs", []), kind=kind
+    )
+
+
+def _information_refs(card: dict[str, Any]) -> set[str]:
+    engine = card["information_engine"]
+    refs = set(engine["input"]["source_refs"])
+    for key in ("complete", "authentic_first_hand", "granular"):
+        refs.update(engine["input"][key]["evidence_refs"])
+    for artifact in engine["process"]["artifacts"]:
+        refs.update(artifact["evidence_refs"])
+    refs.update(engine["process"]["method_refs"])
+    for key in ("closed_loop", "automated", "intelligent"):
+        refs.update(engine["output"][key]["evidence_refs"])
+    refs.update(engine["feedback"]["result_refs"])
+    refs.update(engine["feedback"]["next_input_refs"])
+    return refs
+
+
+def _information_engine(
+    card: dict[str, Any], evidence: EvidenceIndex, gaps: list[str]
+) -> dict[str, Any]:
+    engine = card["information_engine"]
+    input_contract = engine["input"]
+    input_gates = {
+        key: _gate_supported(input_contract[key], evidence, kind="source")
+        for key in ("complete", "authentic_first_hand", "granular")
+    }
+    sources_trusted = evidence.trusted(input_contract["source_refs"], kind="source")
+    input_verified = bool(input_contract["coverage_dimensions"]) and sources_trusted and all(input_gates.values())
+    if not input_verified:
+        gaps.append("IPO/I: full, authentic first-hand, granular source coverage is not verified")
+
+    artifacts_by_level: dict[str, list[dict[str, Any]]] = {
+        level: [row for row in engine["process"]["artifacts"] if row["level"] == level]
+        for level in IPO_PROCESS_LEVELS[1:]
+    }
+    process_supported = "unassessed"
+    for level in IPO_PROCESS_LEVELS[1:]:
+        rows = artifacts_by_level[level]
+        if len(rows) != 1 or not evidence.trusted(rows[0]["evidence_refs"]):
+            break
+        process_supported = level
+    methods_trusted = evidence.trusted(engine["process"]["method_refs"])
+    if process_supported == "L5" and not methods_trusted:
+        process_supported = "L4"
+        gaps.append("IPO/P: L5 requires a verified processing-method reference")
+    if process_supported != "L5":
+        gaps.append("IPO/P: the shared information process has not reached evidenced L5 without skipping")
+
+    output_contract = engine["output"]
+    output_gates = {
+        "closed_loop": _gate_supported(output_contract["closed_loop"], evidence, kind="feedback_receipt"),
+        "automated": _gate_supported(output_contract["automated"], evidence, kind="action_receipt"),
+        "intelligent": _gate_supported(output_contract["intelligent"], evidence, kind="changed_rule"),
+    }
+    if not all(output_gates.values()):
+        gaps.append("IPO/O: closed-loop, automated, and intelligent output evidence is incomplete")
+
+    feedback = engine["feedback"]
+    feedback_verified = bool(
+        feedback.get("incorporated_at")
+        and evidence.trusted(feedback["result_refs"], kind="feedback_receipt")
+        and evidence.trusted(feedback["next_input_refs"])
+    )
+    if not feedback_verified:
+        gaps.append("IPO/feedback: reality results have not been incorporated as next-round input")
+
+    verified = bool(
+        input_verified
+        and process_supported == "L5"
+        and all(output_gates.values())
+        and feedback_verified
+    )
+    return {
+        "input": {
+            "verified": input_verified,
+            "sources_trusted": sources_trusted,
+            "gates": input_gates,
+        },
+        "process": {
+            "declared": engine["process"]["level"],
+            "supported_level": process_supported,
+            "methods_trusted": methods_trusted,
+        },
+        "output": {"verified": all(output_gates.values()), "gates": output_gates},
+        "feedback": {"verified": feedback_verified},
+        "verified": verified,
+    }
+
+
+def _objective_ceiling(
+    card: dict[str, Any], evidence: EvidenceIndex, gaps: list[str], process_ceiling: str
+) -> str:
     objective = card["objective"]
     ceiling = "unassessed"
     if objective.get("statement"):
@@ -154,6 +253,9 @@ def _objective_ceiling(card: dict[str, Any], evidence: EvidenceIndex, gaps: list
         gaps.append("O: selected_candidate_id is not in candidate_goals")
     if not evidence.trusted(objective.get("evidence_refs", [])):
         gaps.append("O: objective evidence is missing, stale, conflicted, or not verified_real")
+    if RANKS["O"][ceiling] > IPO_PROCESS_RANKS[process_ceiling]:
+        ceiling = process_ceiling
+        gaps.append(f"O: objective maturity is capped by the shared IPO Process at {process_ceiling}")
     return ceiling
 
 
@@ -295,6 +397,28 @@ def _semantic_errors(card: dict[str, Any], result: dict[str, Any]) -> list[dict[
     if active_total > card["governance"]["wip_limit"]:
         errors.append(_error("project_wip_exceeded", "$.governance.wip_limit", "running experiments exceed project WIP"))
 
+    process = card["information_engine"]["process"]
+    artifact_levels = [row["level"] for row in process["artifacts"]]
+    if len(artifact_levels) != len(set(artifact_levels)):
+        errors.append(_error(
+            "ipo_process_duplicate_level", "$.information_engine.process.artifacts",
+            "the shared IPO Process may contain at most one artifact per information level",
+        ))
+    if artifact_levels:
+        highest = max(IPO_PROCESS_RANKS[level] for level in artifact_levels)
+        required = set(IPO_PROCESS_LEVELS[1:highest + 1])
+        if set(artifact_levels) != required:
+            errors.append(_error(
+                "ipo_process_level_skipped", "$.information_engine.process.artifacts",
+                "IPO Process artifacts must form one contiguous L1-L5 sequence",
+            ))
+    process_supported = result["information_engine"]["process"]["supported_level"]
+    if IPO_PROCESS_RANKS[process["level"]] > IPO_PROCESS_RANKS[process_supported]:
+        errors.append(_error(
+            "ipo_process_exceeds_evidence", "$.information_engine.process.level",
+            f"declared {process['level']} exceeds evidence-supported {process_supported}",
+        ))
+
     for axis in ("O", "S", "A"):
         declared = card["calibration"][axis]
         ceiling = result["calibration"][axis]["supported_ceiling"]
@@ -329,7 +453,10 @@ def evaluate_card(card: dict[str, Any]) -> dict[str, Any]:
     evidence_rows = {row["evidence_id"]: row for row in card["evidence"]["items"]}
     evidence = EvidenceIndex(evidence_rows)
     gaps: list[str] = []
-    o_ceiling = _objective_ceiling(card, evidence, gaps)
+    information_engine = _information_engine(card, evidence, gaps)
+    o_ceiling = _objective_ceiling(
+        card, evidence, gaps, information_engine["process"]["supported_level"]
+    )
     s_ceiling, strategy_ceilings = _strategy_calibration(card, evidence, gaps)
     a_ceiling, action_ceilings = _action_calibration(card, evidence, gaps)
     ceilings = {"O": o_ceiling, "S": s_ceiling, "A": a_ceiling}
@@ -345,11 +472,20 @@ def evaluate_card(card: dict[str, Any]) -> dict[str, Any]:
     for axis in ("O", "S", "A"):
         declared = card["calibration"][axis]
         supported = RANKS[axis][declared] <= RANKS[axis][ceilings[axis]]
-        effective = declared if (declared != "unassessed" and supported and approval_valid) else "unassessed"
+        effective = declared if (
+            declared != "unassessed"
+            and supported
+            and approval_valid
+            and information_engine["input"]["verified"]
+        ) else "unassessed"
         calibration[axis] = {
             "declared": declared,
             "supported_ceiling": ceilings[axis],
-            "promotion_eligible": supported and ceilings[axis] != "unassessed",
+            "promotion_eligible": (
+                supported
+                and ceilings[axis] != "unassessed"
+                and information_engine["input"]["verified"]
+            ),
             "effective": effective,
         }
 
@@ -361,6 +497,7 @@ def evaluate_card(card: dict[str, Any]) -> dict[str, Any]:
             "contract_sha256": contract_sha256(),
         },
         "card_id": card["card_id"],
+        "information_engine": information_engine,
         "calibration": calibration,
         "strategy_ceilings": strategy_ceilings,
         "action_ceilings": action_ceilings,
@@ -381,7 +518,8 @@ def evaluate_card(card: dict[str, Any]) -> dict[str, Any]:
     if all(value != "unassessed" for value in effective.values()):
         result["maturity_floor"] = min(RANKS[axis][effective[axis]] for axis in ("O", "S", "A"))
 
-    referenced = set(card["objective"]["evidence_refs"])
+    referenced = _information_refs(card)
+    referenced.update(card["objective"]["evidence_refs"])
     for strategy in card["strategies"]:
         for experiment in strategy["experiments"]:
             referenced.update(experiment["receipt_refs"])
@@ -396,6 +534,7 @@ def evaluate_card(card: dict[str, Any]) -> dict[str, Any]:
     result["gold"] = bool(
         result["valid"]
         and effective == {"O": "L5", "S": "S", "A": "A3"}
+        and information_engine["verified"]
         and evidence_clean
     )
     return result
